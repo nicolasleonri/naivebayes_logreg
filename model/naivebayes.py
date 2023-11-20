@@ -9,7 +9,6 @@ from nltk.stem import PorterStemmer
 class NaiveBayes(object):
 
     ######################### STUDENT SOLUTION #########################
-    # YOUR CODE HERE
     def __init__(self, log_priors, log_likelihoods):
         """Initialises a new classifier."""
         self.log_priors = log_priors
@@ -27,7 +26,7 @@ class NaiveBayes(object):
         """
         ################## STUDENT SOLUTION ########################
 
-        # We create temporary dictionary that will give us the answer
+        # We create temporary dictionary that will give us the final answer
         tmp_dict = {key: 0 for key in self.log_priors}
 
         for word in x:
@@ -92,7 +91,7 @@ class NaiveBayes(object):
                 "Sorry, the vocabulary cannot be bigger than the corpus.")
 
         # We also create a Counter for each label that has all words belonging to that label and how often each word appears
-        # This will improve the perfomance when calculating the log likelihodd by not having to count each time
+        # This will improve the perfomance when calculating the log likelihood by not having to count again each time
         label_word_counts = {label: Counter(
             word for words, searched_label in data for word in words if searched_label == label) for label in n_c}
 
@@ -116,27 +115,32 @@ class NaiveBayes(object):
                     (count + k) / (len(big_doc[label]) + vocabulary))
                 # And save it in the dictionary!
                 log_likelihoods[word].append([label, likelihood])
-                # Now, we have a dictionary with all words and a list of two lists which contain the label and its calculated likelihood
 
+        # Now, we have a dictionary with all words and a list of two lists which contain the label and its calculated likelihood
         return cls(log_priors, log_likelihoods)
         ############################################################
 
 
-def features1(data, k=1):
+def features1(data):
     """
-    Your feature of choice for Naive Bayes classifier.
+    Preprocesses text data for a Naive Bayes classifier.
 
     Args:
-        data: Training data.
-        k: The smoothing constant.
+        data (list): Training data, where each element is a tuple containing a list of words (sentence) and its label.
 
     Returns:
-        Parameters for Naive Bayes classifier, which can
-        then be used to initialize `NaiveBayes()` class
+        list: Preprocessed data, where each element is a tuple containing a list of cleaned words and its label.
+
+    Notes:
+        This function performs the following preprocessing steps on the input text data:
+        1. Converts words to lowercase.
+        2. Removes non-alphanumeric characters.
+        3. Removes hyperlinks.
+        4. Removes old-style retweet text ("RT").
+        5. Removes hashtags from words.
+        The preprocessed data is returned and can be used to initialize the NaiveBayes() class.
     """
     ###################### STUDENT SOLUTION ##########################
-    # FEATURE1: Preprocessing the text
-
     def preprocess_text(data):
 
         # Frist we separate our sentences (tweets) and labels
@@ -171,21 +175,21 @@ def features1(data, k=1):
     ##################################################################
 
 
-def features2(data, k=1):
+def features2(data):
     """
-    Your feature of choice for Naive Bayes classifier.
+    Removes stop words from text data for a Naive Bayes classifier.
 
     Args:
-        data: Training data.
-        k: The smoothing constant.
+        data (list): Training data, where each element is a tuple containing a list of words (sentence) and its label.
 
     Returns:
-        Parameters for Naive Bayes classifier, which can
-        then be used to initialize `NaiveBayes()` class
+        list: Data with stop words removed, where each element is a tuple containing a list of words without stop words and its label.
+
+    Notes:
+        This function removes common English stop words from the input text data. Stop words are words that are considered to be of little value for text classification as they occur frequently across texts.
+        The processed data is returned and can be used to initialize the NaiveBayes() class.
     """
     ###################### STUDENT SOLUTION ##########################
-    # FEATURE 2: REMOVING STOP WORDS
-
     def remove_stop_words(data):
         sentences, labels = zip(*[(sentence, label)
                                 for sentence, label in data])
@@ -210,21 +214,21 @@ def features2(data, k=1):
     ##################################################################
 
 
-def features3(data, k=1):
+def features3(data):
     """
-    Your feature of choice for Naive Bayes classifier.
+    Applies stemming to words in text data for a Naive Bayes classifier.
 
     Args:
-        data: Training data.
-        k: The smoothing constant.
+        data (list): Training data, where each element is a tuple containing a list of words (sentence) and its label.
 
     Returns:
-        Parameters for Naive Bayes classifier, which can
-        then be used to initialize `NaiveBayes()` class
+        list: Data with words stemmed, where each element is a tuple containing a list of stemmed words and its label.
+
+    Notes:
+        This function applies stemming to each word in the input text data using the Porter stemmer. Stemming reduces words to their root or base form, helping to simplify and normalize the vocabulary.
+        The processed data is returned and can be used to initialize the NaiveBayes() class.
     """
     ###################### STUDENT SOLUTION ##########################
-    # FEATURE 3: Stemming
-
     def stemming_words(data):
 
         # We will use the Porter stemmer

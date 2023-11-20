@@ -4,43 +4,80 @@ from collections import Counter
 
 class LogReg:
     def __init__(self, eta=0.01, num_iter=10, C=0.1):
+        """
+        Initialize a Logistic Regression classifier.
+
+        Args:
+            eta (float): The learning rate. Default is 0.01.
+            num_iter (int): The number of iterations for training. Default is 10.
+            C (float): The regularization parameter. Default is 0.1.
+        """
+
         self.eta = eta
         self.num_iter = num_iter
         self.C = C
 
     def softmax(self, inputs):
         """
-        Calculate the softmax for the give inputs (array)
-        :param inputs:
-        :return:
-        """
-        # return np.exp(inputs) / float(np.sum(np.exp(inputs)))
+        Calculate the softmax for the given inputs.
 
+        Args:
+            inputs: numeric array.
+
+        Returns: 
+            Softmax probabilities as array.
+
+        Notes:
+            The adjustment exp_inputs was used to improve numerical stability
+        """
+
+        # Shift inputs to avoid numerical instability
         exp_inputs = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
-        return exp_inputs / np.sum(exp_inputs, axis=1, keepdims=True)
+
+        # Calculate softmax probabilities
+        softmax_probs = exp_inputs / np.sum(exp_inputs, axis=1, keepdims=True)
+
+        return softmax_probs
 
     def train(self, X, Y, ):
+        """
+        Train the Logistic Regression model.
+
+        Args:
+            X: Feature matrix
+            Y: Label matrix
+
+        Returns:
+            None
+        """
+
         #################### STUDENT SOLUTION ###################
 
-        # weights initialization
+        # Initialize weights and bias
         self.weights = np.zeros((X.shape[1], Y.shape[1]), dtype=np.float128)
         self.bias = np.zeros(Y.shape[1], dtype=np.float128)
 
         for i in range(self.num_iter):
+            # Create minibatches for training
             minibatches = self.create_minibatches(X, Y, 100)
 
             for X_batch, Y_batch in minibatches:
+                # Calculate predictions and gradient
                 predictions = self.softmax(
                     np.dot(X_batch, self.weights) + self.bias) - Y_batch
                 gradient = np.dot(X_batch.T, predictions)
 
+                # Update weights and bias with regularization term
                 self.weights -= self.eta * gradient + self.C
                 self.bias -= self.eta * np.sum(predictions, axis=0)
 
+            # Evaluate and print metrics after each epoch
             predictions = self.predict(X)
+            accuracy = accuracy_logreg(predictions, Y)
+            f1_score = f1_score_logreg(predictions, Y)
 
-            print(f"For epoch {i+1}, the accuracy was:", accuracy_logreg(
-                predictions, Y), "and the F1 scores:", accuracy_logreg(predictions, Y))
+            print(
+                f"For epoch {i + 1}, the accuracy was: {accuracy} and the F1 score was: {f1_score}")
 
         print("Training done!")
 
@@ -48,19 +85,42 @@ class LogReg:
         #########################################################
 
     def p(self, X):
-        # YOUR CODE HERE
-        #     TODO:
-        #         1) Fill in (log) probability prediction
+        """
+        Calculate the log probability prediction.
+
+        Args:
+            X: Matrix.
+
+        Returns:
+            Log Softmax probabilites predictions.
+        """
         ################## STUDENT SOLUTION ########################
-        return np.log(self.softmax(np.dot(X, self.weights)))
+        # Calculate dot product and apply softmax
+        z = np.dot(X, self.weights)
+        softmax_result = self.softmax(z)
+
+        # Calculate log probabilities
+        log_probabilities = np.log(softmax_result)
+
+        return log_probabilities
         ############################################################
 
     def predict(self, X):
-        # YOUR CODE HERE
-        #     TODO:
-        #         1) Replace next line with prediction of best class
+        """
+        Predict the class for a set of input features.
+
+        Args:
+            X (numpy.ndarray): Input feature matrix.
+
+        Returns:
+            numpy.ndarray: Predicted classes.
+        """
         ####################### STUDENT SOLUTION ####################
-        predictions = self.p(X).argmax(axis=1)
+        # Get the log probability predictions
+        log_probabilities = self.p(X)
+
+        # Identify the class with the highest probability for each input
+        predictions = log_probabilities.argmax(axis=1)
 
         return predictions
         #############################################################
@@ -80,10 +140,11 @@ class LogReg:
         num_samples = X.shape[0]
         minibatches = []
 
-        # Shuffle the data
+        # Shuffle the data to ensure randomness in minibatches
         indices = np.arange(num_samples)
         np.random.shuffle(indices)
 
+        # Iterate over the data, creating minibatches of the specified size
         for start in range(0, num_samples, batch_size):
             end = start + batch_size
             batch_indices = indices[start:end]
@@ -110,10 +171,10 @@ def buildw2i(vocab):
     # YOUR CODE HERE
     #################### STUDENT SOLUTION ######################
 
-    # First we need to get all words in the vocabulary
+    # Extract all unique words from the vocabulary
     vocabulary = set(word for words, _ in vocab for word in words)
 
-    # Then we create dictionary looping through the vocabulary and adding the index as value and the word as key
+    # Create a dictionary mapping each word to its index
     word_index_dict = {word: index for index, word in enumerate(vocabulary)}
 
     return word_index_dict
@@ -136,36 +197,33 @@ def featurize(data, train_data=None):
     ##################### STUDENT SOLUTION #######################
 
     # First, we create our dictionary with the unique words and their indeces
-    word_index_dict = buildw2i(data)
+    word_index_dict = buildw2i(data)  # Using train_data to build vocabulary
 
-    # Now, we can initialize our empty matrices
-    # The Matrix X is an N × F matrix (N : number of data instances, F : number of features)
-    # In this case, the number of features is equal to the number unique words
+    # Initialize empty matrices
+    # Matrix X is an N × F matrix (N: number of data instances, F: number of features)
     X = np.empty((len(data), len(word_index_dict)))
 
-    # Then we can initialize an empty numpy matrix (N x i) being i the number of labels and containing only zeros
-    # As we need to know how many features we have, we'll isolate the unique labels like this...
+    # Initialize an empty numpy matrix (N × i), where i is the number of labels, containing only zeros
+    # Extract unique labels from the data
     documents, labels = zip(*[(document, label)
                               for document, label in data])
-    unique_labels = []
-    for x in set(labels):
-        unique_labels.append(x)
-    # ... to get our Marix Y:
+    unique_labels = list(set(labels))
+
+    # Initialize Matrix Y
     Y = np.zeros((len(labels), len(unique_labels)))
 
-    # In this point, I want to be sure that they're the same length. Otherwise, it doesn't make sense to continue:
+    # Ensure matrices have equal length
     if len(X) != len(Y):
-        raise ("The matrices have to have equal length.")
+        raise ValueError("The matrices must have equal length.")
 
-    # Now, we'll populate the matrices
-    # The first matrix has to be populated with a 1 if any of the words found in the document is also in the unique words dictionary
-    # This means that each row has to have a 0 or a 1 depending if any of the unique words are found in the tweet using the indexation of the unique words dictionray
+    # Populate matrices
+    # Matrix X is populated with 1 if any of the words in the document is in the unique words dictionary
     for idx, val in enumerate(documents):
         for word in val:
             if word in word_index_dict.keys():
                 X[idx][word_index_dict[word]] = int(1)
 
-    # The second matrix has to be populated with binary values based on the presence of each label in the corresponding document
+    # Matrix Y is populated with binary values based on the presence of each label in the corresponding document
     for idx, label in enumerate(labels):
         label_index = unique_labels.index(label)
         Y[idx, label_index] = int(1)
@@ -175,24 +233,49 @@ def featurize(data, train_data=None):
 
 
 def accuracy_logreg(predictions, labels):
-    # assign classes corresponding to returned index
+    """
+    Computes the accuracy of a Logistic Regression classifier on reference data.
+
+    Args:
+        predictions (numpy.ndarray): Predicted labels from the classifier.
+        labels (numpy.ndarray): True labels from the reference data.
+
+    Returns:
+        float: The accuracy of the classifier on the test data.
+    """
+    # Assign classes corresponding to the returned index
     predictions = [np.array([1, 0]) if index == 0 else np.array(
         [0, 1]) for index in predictions]
-    return np.sum(predictions == labels) / labels.size * 100
+
+    # Calculate accuracy
+    accuracy = np.sum(predictions == labels) / labels.size * 100
+
+    return accuracy
 
 
 def f1_score_logreg(predictions, labels):
-    # assign classes corresponding to returned index
+    """
+    Computes the F1 score of a Logistic Regression classifier on reference data.
+
+    Args:
+        predictions (numpy.ndarray): Predicted labels from the classifier.
+        labels (numpy.ndarray): True labels from the reference data.
+
+    Returns:
+        float: The F1 score of the classifier on the test data.
+    """
+
+    # Assign classes corresponding to the returned index
     predictions = [np.array([1, 0]) if index == 0 else np.array(
         [0, 1]) for index in predictions]
 
-    # calculate true positive, false positive, and false negative
+    # Calculate true positive, false positive, and false negative
     tp = np.sum([np.array_equal(pred, label)
                 for pred, label in zip(predictions, labels)])
     fp = len(predictions) - tp
     fn = len(labels) - tp
 
-    # calculate precision, recall, and f1 score
+    # Calculate precision, recall, and F1 score
     precision = tp / (tp + fp) if (tp + fp) != 0 else 0
     recall = tp / (tp + fn) if (tp + fn) != 0 else 0
     f1 = 2 * (precision * recall) / (precision +

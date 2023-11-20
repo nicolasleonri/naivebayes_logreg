@@ -3,6 +3,7 @@ import json
 import matplotlib.pyplot as plt
 from nltk.tokenize import TweetTokenizer
 
+
 def read_hate_tweets(annofile, jsonfile):
     """Reads in hate speech data."""
     all_data = {}
@@ -44,12 +45,30 @@ def read_hate_tweets(annofile, jsonfile):
 
 
 def plot_grafs(k_values, tested_list, type):
+    """
+    Plots a graph of the specified type against smoothing parameter (k).
+
+    Args:
+        k_values (list): List of smoothing parameter values.
+        tested_list (list): List of values corresponding to the specified type.
+        type (str): Type of values being plotted.
+
+    Returns:
+        None
+    """
+    # Create a new figure with a specified size
     plt.figure(figsize=(10, 6))
 
+    # Plot the data points with markers
     plt.plot(k_values, tested_list, marker='o')
+
+    # Set the title and labels for the axes
     plt.title(f"{type} vs Smoothing Parameter (k)")
     plt.xlabel('Smoothing Parameter (k)')
     plt.ylabel(str(type))
 
+    # Adjust layout for better presentation
     plt.tight_layout()
+
+    # Display the plot
     plt.show()
