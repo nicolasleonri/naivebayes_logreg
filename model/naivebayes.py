@@ -112,7 +112,7 @@ class NaiveBayes(object):
                 count = word_count[word]
                 # Calculate the likelihood with log...
                 likelihood = log(
-                    (count + k) / (len(big_doc[label]) + vocabulary))
+                    (count + k) / (len(big_doc[label]) + (vocabulary*k)))
                 # And save it in the dictionary!
                 log_likelihoods[word].append([label, likelihood])
 
